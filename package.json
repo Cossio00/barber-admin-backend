@@ -2,11 +2,16 @@
   "name": "barber-admin-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/app.js",
   "scripts": {
+    "dev": "nodemon src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Vinicius Cossio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cossio00/barber-admin-backend.git"
+  },
+  "author": "Vinícius Cossio",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.20.2",
