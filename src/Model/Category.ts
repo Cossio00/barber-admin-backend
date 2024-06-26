@@ -1,5 +1,9 @@
 class Category{
 
+    private categoryid: Number;
+    private categorydescription: string;
+    private categoryvalue: Number;
+    
     constructor(body){
         this.categoryid = body.categoryid;
         this.categorydescription = body.categorydescription;
@@ -18,17 +22,17 @@ class Category{
         return this.categoryvalue;
     }
 
-    setId(id){
+    setId(id: Number){
         this.categoryid = id;
     }
 
-    setDescription(description){
+    setDescription(description: string){
         this.categorydescription = description;
     }
 
-    setValue(value){
+    setValue(value: Number){
         this.categoryvalue = value;
     }
 }
 
-module.exports = Category;
+export default Category;
