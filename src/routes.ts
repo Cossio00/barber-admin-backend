@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import getClient from './Controller/Client';
-import getCategory from './Controller/Category';
+import { getCategory, createCategory }from './Controller/Category';
 
 const router = Router();
 
@@ -23,6 +23,14 @@ router.get('/category', async function (req: any, res: any) {
         res.json(await getCategory(req, res));
     } catch(err: any){
         console.error('Error to get categories list: ', err.message);
+    }
+})
+
+router.post('/category', async function (req: any, res: any) {
+    try{
+        res.json(await createCategory(req, res));
+    } catch(err: any){
+        console.error('Error to create category: ', err.message);
     }
 })
 
