@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import getClient from './Controller/Client';
+import { getClient, createClient, updateClient, deleteClient } from './Controller/Client';
 import { getCategory, createCategory, updateCategory, deleteCategory }from './Controller/Category';
 
 const router = Router();
@@ -15,6 +15,29 @@ router.get('/client', async function(req: any, res: any){
     }
 })
 
+router.post('/client', async function(req: any, res: any){
+    try{
+        res.json(await createClient(req, res));
+    } catch(err: any){
+        console.error('Error to create client: ', err.message);
+    }
+})
+
+router.put('/client/:id', async function (req: any, res: any) {
+    try{
+        res.json(await updateClient(req, res));
+    } catch(err: any){
+        console.error('Error to update client: ', err.message);
+    }
+})
+
+router.delete('/client/:id', async function (req: any, res: any) {
+    try{
+        res.json(await deleteClient(req, res));
+    } catch(err: any){
+        console.error('Error to delete client: ', err.message);
+    }
+})
 
 //      --------    CATEGORY
 

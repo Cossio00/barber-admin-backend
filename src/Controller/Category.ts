@@ -23,14 +23,14 @@ async function createCategory(req: any, res: any){
             VALUES
             ('${category.getDescription()}','${category.getValue()}')`;
 
-        try{
-            const result: any = await db.query(sql, null);
-            if (result.affectedRows != 0)
-                res.status(202).json({message: 'CATEGORY_CREATED_SUCCESSFULLY'});
-            else throw error
-        }catch(error){
-            res.status(404).json({message: 'ERROR_CREATING_ITEM:', error});
-        }
+    try{
+        const result: any = await db.query(sql, null);
+        if (result.affectedRows != 0)
+            res.status(202).json({message: 'CATEGORY_CREATED_SUCCESSFULLY'});
+        else throw error
+    }catch(error){
+        res.status(404).json({message: 'ERROR_CREATING_ITEM:', error});
+    }
 }
 
 async function updateCategory(req: any, res: any) {
@@ -64,7 +64,6 @@ async function deleteCategory(req: any, res: any){
     }finally{
         res.status(202).json({message: 'CATEGORY_DELETED_SUCCESSFULLY'});
     }
-
 }
 
 export {getCategory, createCategory, updateCategory, deleteCategory};
