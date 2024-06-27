@@ -4,7 +4,7 @@ class Category{
     private categorydescription: string;
     private categoryvalue: Number;
     
-    constructor(body){
+    constructor(body: Category){
         this.categoryid = body.categoryid;
         this.categorydescription = body.categorydescription;
         this.categoryvalue = body.categoryvalue; 
@@ -35,4 +35,20 @@ class Category{
     }
 }
 
-export default Category;
+class Categories{
+
+    private categories: Array<Category>;
+
+    constructor(){
+        this.categories = [];
+    }
+
+    add(category: Category){
+        this.categories.push(category);
+    }
+
+    list(){
+        return this.categories;
+    }
+}
+export {Category, Categories};

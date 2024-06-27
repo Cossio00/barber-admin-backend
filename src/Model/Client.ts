@@ -35,4 +35,21 @@ class Client{
     }
 }
 
-export default Client;
+class Clients{
+
+    private clients: Array<Client>;
+
+    constructor(){
+        this.clients = [];
+    }
+    
+    add(client : Client){
+        this.clients.push(client);
+    }
+
+    list(){
+        return this.clients;
+    }
+}
+
+export {Client, Clients};
