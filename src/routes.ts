@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { getClient, createClient, updateClient, deleteClient } from './Controller/Client';
 import { getCategory, createCategory, updateCategory, deleteCategory }from './Controller/Category';
+import { getServices,  createService } from './Controller/Service';
+import { error } from 'console';
 
 const router = Router();
 
@@ -70,6 +72,24 @@ router.delete('/category/:id', async function (req: any, res: any) {
         res.json(await deleteCategory(req, res));
     } catch(err: any){
         console.error('Error to delete category: ', err.message);
+    }
+})
+
+//      --------    SERVICE
+
+router.get('/service', async function (req: any, res: any){
+    try{
+        res.json(await getServices(req, res));
+    } catch(err: any){
+        console.error('Error to get services list: ', err.message);
+    }
+})
+
+router.post('/service', async function (req: any, res: any){
+    try{
+        res.json(await createService(req, res));
+    } catch(err: any){
+        console.error('Error to create service: ', err.message);
     }
 })
 
