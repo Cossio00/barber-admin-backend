@@ -19,11 +19,13 @@ async function getServices(req: any, res: any){
 
 async function createService(req: any, res: any){
 
+    let serviceID = randomUUID();
     const service = new Service(req.body)
-
-    const sql: string = `INSERT INTO service (serviceclientid, servicedate, servicecategoryid)
+    service.setServiceId(serviceID.slice(0, 30));
+    
+    const sql: string = `INSERT INTO service (serviceid, serviceclientid, servicedate, servicecategoryid)
             VALUES
-            ('${service.getServiceClient()}', '${service.getServiceDate()}', ${service.getServiceCategory()})`
+            ('${service.getServiceId()}', '${service.getServiceClient()}', '${service.getServiceDate()}', ${service.getServiceCategory()})`
 
     try{
         const result : any = await db.query(sql, null);
@@ -35,4 +37,40 @@ async function createService(req: any, res: any){
     }
 }
 
-export {getServices, createService};
+async function updateService(req: any, res: any){
+
+    const service = new Service(req.body);
+    const serviceId = req.params['id'];
+    service.setServiceId(serviceId);
+
+    const sql: string = `UPDATE service
+            SET serviceclientid = '${service.getServiceClient()}', servicedate = '${service.getServiceDate()}', servicecategoryid = ${service.getServiceCategory()}
+            WHERE serviceid = '${service.getServiceId()}'`;
+
+    try{
+        await db.query(sql, null);                                   // Add validation when id is not present in db
+    }catch(error){    
+        res.status(404).json({message: 'INVALID_DATA'});
+    }finally{
+        res.status(202).json({message: 'SERVICE_UPDATED_SUCCESSFULLY'});
+    }
+} 
+
+async function deleteService(req: any, res: any) {
+    
+    const serviceId = req.params['id'];
+
+    const sql: string = `DELETE FROM service 
+            WHERE serviceid = '${serviceId}'`;
+
+    try{
+        await db.query(sql, null);                                  // Add validation when id is not present in db
+    }catch(err){
+        res.status(404).json({message: 'ERROR'});
+    }finally{
+        res.status(202).json({message: 'SERVICE_DELETED_SUCCESSFULLY'});
+    }
+
+}
+
+export {getServices, createService, updateService, deleteService};

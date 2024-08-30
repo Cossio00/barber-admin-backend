@@ -46,7 +46,7 @@ async function updateClient(req: any, res: any){
             WHERE clientid = '${client.getId()}'`;
 
     try{
-        await db.query(sql, null);
+        await db.query(sql, null);                              // Add validation when id is not present in db
     }catch(err){
         res.status(404).json({message: 'INVALID_DATA'});
     }finally{
@@ -61,7 +61,7 @@ async function deleteClient(req: any, res: any){
             WHERE clientid = '${clientId}'`;
     
     try{
-        await db.query(sql, null);
+        await db.query(sql, null);                              // Add validation when id is not present in db
     }catch(err){
         res.status(404).json({message: 'ERROR'});
     }finally{

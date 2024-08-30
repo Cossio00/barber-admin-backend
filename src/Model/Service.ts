@@ -1,13 +1,19 @@
 class Service{
 
+    private serviceid: string;
     private serviceclientid: string;
     private servicedate: string;
     private servicecategoryid: Number;
 
     constructor(body: any){
+        this.serviceid = body.serviceid
         this.serviceclientid = body.serviceclientid;
         this.servicedate = body.servicedate;
         this.servicecategoryid = body.servicecategoryid;
+    }
+
+    getServiceId(){
+        return this.serviceid;
     }
 
     getServiceClient(){
@@ -20,6 +26,10 @@ class Service{
 
     getServiceCategory(){
         return this.servicecategoryid;
+    }
+
+    setServiceId(id : string){
+        this.serviceid = id;
     }
 
     setServiceClient(serviceClientId: string){
