@@ -1,16 +1,23 @@
 import db from '../dbConfig/db';
 import { randomUUID } from 'crypto';
 import { Service, Services } from '../Model/Service';
+import { ServiceGet, ServicesGet } from '../Model/ServiceGetRequest';
 import { error } from 'console';
  
 
 async function getServices(req: any, res: any){
 
-    const rows : any = await db.query(`SELECT * FROM service`, null);
-    const services = new Services();
+    const sql = `SELECT s.serviceid,  c.clientid, c.clientname, s.servicedate, ca.categorydescription
+                FROM service s 
+                JOIN client c ON s.serviceclientid = c.clientid
+                JOIN category ca ON s.servicecategoryid = ca.categoryid;`
+        
+    const rows : any = await db.query(sql, null);
+
+    const services = new ServicesGet();
 
     for(var row of rows){
-        const service = new Service(row);
+        const service = new ServiceGet(row);
         services.add(service);
     }
 
