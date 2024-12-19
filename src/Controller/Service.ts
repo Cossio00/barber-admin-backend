@@ -5,6 +5,23 @@ import { ServiceGet, ServicesGet } from '../Model/ServiceGetRequest';
 import { error } from 'console';
  
 
+async function getServices(req: any, res: any){
+
+    const id = req.params['id']
+
+    const sql = `SELECT s.serviceid,  c.clientid, c.clientname, s.servicedate, ca.categorydescription
+                    FROM service s 
+                    JOIN client c ON s.serviceclientid = c.clientid
+                    JOIN category ca ON s.servicecategoryid = ca.categoryid
+                    WHERE s.serviceid = '${id}';`
+    
+    const rows : any = await db.query(sql, null);
+
+    const service = new ServiceGet(rows[0]);
+    
+    return service;
+}
+
 async function getServicesAgenda(req: any, res: any){
 
     const date = req.body.date
@@ -84,4 +101,4 @@ async function deleteService(req: any, res: any) {
 
 }
 
-export {getServicesAgenda, createService, updateService, deleteService};
+export {getServices, getServicesAgenda, createService, updateService, deleteService};
