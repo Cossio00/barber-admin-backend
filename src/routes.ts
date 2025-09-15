@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getClient, createClient, updateClient, deleteClient } from './Controller/Client';
 import { getCategory, createCategory, updateCategory, deleteCategory }from './Controller/Category';
-import { createService, deleteService, updateService, getServicesAgenda, getServices } from './Controller/Service';
+import { createService, deleteService, updateService, getServicesAgenda, getServices, getService } from './Controller/Service';
 import { error } from 'console';
 
 const router = Router();
@@ -79,6 +79,14 @@ router.delete('/category/:id', async function (req: any, res: any) {
 
 router.get('/service-agenda/:id', async function (req: any, res: any){
 
+    try{
+        res.json(await getService(req, res));
+    } catch(err: any){
+        console.error('Error to delete category: ', err.message);
+    }
+})
+
+router.get('/service-agenda', async function (req: any, res: any){
     try{
         res.json(await getServices(req, res));
     } catch(err: any){

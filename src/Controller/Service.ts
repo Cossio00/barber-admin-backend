@@ -5,7 +5,7 @@ import { ServiceGet, ServicesGet } from '../Model/ServiceGetRequest';
 import { error } from 'console';
  
 
-async function getServices(req: any, res: any){
+async function getService(req: any, res: any){
 
     const id = req.params['id']
 
@@ -22,14 +22,48 @@ async function getServices(req: any, res: any){
     return service;
 }
 
+async function getServices(req: any, res: any) {
+    try {
+        const sql = `
+            SELECT s.serviceid,
+                   c.clientid,
+                   c.clientname,
+                   s.servicedate,
+                   cat.categorydescription as servicecategory,
+                   cat.categoryvalue
+            FROM service s
+            JOIN client c ON s.serviceclientid = c.clientid
+            JOIN category cat ON s.servicecategoryid = cat.categoryid
+            ORDER BY s.servicedate;
+        `;
+
+        const rows: any = await db.query(sql, null);
+
+        const services = new ServicesGet();
+        for (const row of rows) {
+            const service = new ServiceGet(row);
+            services.add(service);
+        }
+
+        res.status(200).json(services);
+    } catch (err) {
+        res.status(500).json({ message: "ERROR_FETCHING_SERVICES", error: err });
+    }
+}
+
 async function getServicesAgenda(req: any, res: any){
 
     const date = req.body.date
 
-    const sql = `SELECT s.serviceid,  c.clientid, c.clientname, s.servicedate, ca.categorydescription
-                    FROM service s 
+    const sql = `SELECT s.serviceid,
+                    c.clientid,
+                    c.clientname,
+                    s.servicedate,
+                    cat.categorydescription as servicecategory,
+                    cat.categoryvalue
+                    FROM service s
                     JOIN client c ON s.serviceclientid = c.clientid
-                    JOIN category ca ON s.servicecategoryid = ca.categoryid
+                    JOIN category cat ON s.servicecategoryid = cat.categoryid
                     WHERE DATE(s.servicedate) = '${date}'
                     ORDER BY s.servicedate;`
     
@@ -101,4 +135,4 @@ async function deleteService(req: any, res: any) {
 
 }
 
-export {getServices, getServicesAgenda, createService, updateService, deleteService};
+export {getService, getServices, getServicesAgenda, createService, updateService, deleteService};

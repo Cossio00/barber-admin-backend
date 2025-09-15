@@ -1,80 +1,83 @@
-class ServiceGet{
-
-    /* 
-    SELECT s.serviceid,  c.clientid, c.clientname, s.servicedate
-    FROM service s JOIN client c ON s.serviceclientid = c.clientid;
-
-    */
+class ServiceGet {
     private serviceid: string;
     private clientid: string;
     private clientname: string;
     private servicedate: string;
     private servicecategory: string;
+    private categoryvalue: number; // novo campo
 
-    constructor(body: any){
-        this.serviceid = body.serviceid
+    constructor(body: any) {
+        this.serviceid = body.serviceid;
         this.clientid = body.clientid;
         this.clientname = body.clientname;
         this.servicedate = body.servicedate;
-        this.servicecategory = body.servicecategory
+        this.servicecategory = body.servicecategory;
+        this.categoryvalue = body.categoryvalue; // vindo do join
     }
 
-    getServiceId(){
+    getServiceId() {
         return this.serviceid;
     }
 
-    getClientID(){
+    getClientID() {
         return this.clientid;
     }
 
-    getClientName(){
+    getClientName() {
         return this.clientname;
     }
 
-    getServiceDate(){
+    getServiceDate() {
         return this.servicedate;
     }
 
-    getServiceCategory(){
+    getServiceCategory() {
         return this.servicecategory;
     }
 
-    setServiceId(id : string){
+    getCategoryValue() {
+        return this.categoryvalue;
+    }
+
+    setServiceId(id: string) {
         this.serviceid = id;
     }
 
-    setServiceClient(clientId: string){
+    setServiceClient(clientId: string) {
         this.clientid = clientId;
     }
-    
-    setClientName(clientName: string){
+
+    setClientName(clientName: string) {
         this.clientname = clientName;
     }
 
-    setServiceDate(serviceDate: string){
+    setServiceDate(serviceDate: string) {
         this.servicedate = serviceDate;
     }
 
-    setServiceCategory(serviceCategory: string){
+    setServiceCategory(serviceCategory: string) {
         this.servicecategory = serviceCategory;
+    }
+
+    setCategoryValue(value: number) {
+        this.categoryvalue = value;
     }
 }
 
-class ServicesGet{
-
+class ServicesGet {
     private services: Array<ServiceGet>;
 
-    constructor(){
+    constructor() {
         this.services = [];
     }
 
-    add(service: ServiceGet){
+    add(service: ServiceGet) {
         this.services.push(service);
     }
 
-    list(){
+    list() {
         return this.services;
     }
 }
 
-export {ServiceGet, ServicesGet};
+export { ServiceGet, ServicesGet };
