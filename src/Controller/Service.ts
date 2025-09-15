@@ -34,7 +34,7 @@ async function getServices(req: any, res: any) {
             FROM service s
             JOIN client c ON s.serviceclientid = c.clientid
             JOIN category cat ON s.servicecategoryid = cat.categoryid
-            ORDER BY s.servicedate;
+            ORDER BY s.servicedate DESC;
         `;
 
         const rows: any = await db.query(sql, null);
