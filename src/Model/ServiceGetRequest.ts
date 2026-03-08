@@ -5,6 +5,8 @@ class ServiceGet {
     private servicedate: string;
     private servicecategory: string;
     private categoryvalue: number; // novo campo
+    private servicestatus: string;
+
 
     constructor(body: any) {
         this.serviceid = body.serviceid;
@@ -13,6 +15,7 @@ class ServiceGet {
         this.servicedate = body.servicedate;
         this.servicecategory = body.servicecategory;
         this.categoryvalue = body.categoryvalue; // vindo do join
+        this.servicestatus = body.servicestatus;
     }
 
     getServiceId() {
@@ -38,6 +41,10 @@ class ServiceGet {
     getCategoryValue() {
         return this.categoryvalue;
     }
+    
+    getServiceStatus() {
+        return this.servicestatus;
+    }
 
     setServiceId(id: string) {
         this.serviceid = id;
@@ -61,6 +68,10 @@ class ServiceGet {
 
     setCategoryValue(value: number) {
         this.categoryvalue = value;
+    }
+    
+    setServiceStatus(serviceStatus: string) {
+        this.servicestatus = serviceStatus;
     }
 }
 

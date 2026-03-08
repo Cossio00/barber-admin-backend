@@ -4,12 +4,14 @@ class Service{
     private serviceclientid: string;
     private servicedate: string;
     private servicecategoryid: Number;
+    private servicestatus: string;
 
     constructor(body: any){
         this.serviceid = body.serviceid
         this.serviceclientid = body.serviceclientid;
         this.servicedate = body.servicedate;
         this.servicecategoryid = body.servicecategoryid;
+        this.servicestatus = body.servicestatus;   
     }
 
     getServiceId(){
@@ -27,6 +29,10 @@ class Service{
     getServiceCategory(){
         return this.servicecategoryid;
     }
+    
+    getServiceStatus(){
+        return this.servicestatus;
+    }
 
     setServiceId(id : string){
         this.serviceid = id;
@@ -42,6 +48,10 @@ class Service{
 
     setServiceCategory(serviceCategoryId: Number){
         this.servicecategoryid = serviceCategoryId;
+    }
+    
+    setServiceStatus(serviceStatus: string){
+        this.servicestatus = serviceStatus;
     }
 }
 

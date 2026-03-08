@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { getClient, createClient, updateClient, deleteClient } from './Controller/Client';
 import { getCategory, createCategory, updateCategory, deleteCategory }from './Controller/Category';
-import { createService, deleteService, updateService, getServicesAgenda, getServices, getService } from './Controller/Service';
+import { createService, deleteService, updateService, updateServiceStatus,getServicesAgenda, getServices, getService } from './Controller/Service';
 import { error } from 'console';
 
 const router = Router();
@@ -113,6 +113,14 @@ router.post('/service', async function (req: any, res: any){
 router.put('/service/:id', async function (req: any, res: any){
     try{
         res.json(await updateService(req, res));
+    }catch(err: any){{
+        console.error('Error to update service: ', err.message);
+    }}
+})
+
+router.put('/service-status/:id', async function (req: any, res: any){
+    try{
+        res.json(await updateServiceStatus(req, res));
     }catch(err: any){{
         console.error('Error to update service: ', err.message);
     }}

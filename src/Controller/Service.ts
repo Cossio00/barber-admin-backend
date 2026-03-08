@@ -30,7 +30,8 @@ async function getServices(req: any, res: any) {
                    c.clientname,
                    s.servicedate,
                    cat.categorydescription as servicecategory,
-                   cat.categoryvalue
+                   cat.categoryvalue,
+                   s.servicestatus
             FROM service s
             JOIN client c ON s.serviceclientid = c.clientid
             JOIN category cat ON s.servicecategoryid = cat.categoryid
@@ -60,7 +61,8 @@ async function getServicesAgenda(req: any, res: any){
                     c.clientname,
                     s.servicedate,
                     cat.categorydescription as servicecategory,
-                    cat.categoryvalue
+                    cat.categoryvalue,
+                    s.servicestatus
                     FROM service s
                     JOIN client c ON s.serviceclientid = c.clientid
                     JOIN category cat ON s.servicecategoryid = cat.categoryid
@@ -106,7 +108,7 @@ async function updateService(req: any, res: any){
     service.setServiceId(serviceId);
 
     const sql: string = `UPDATE service
-            SET serviceclientid = '${service.getServiceClient()}', servicedate = '${service.getServiceDate()}', servicecategoryid = ${service.getServiceCategory()}
+            SET serviceclientid = '${service.getServiceClient()}', servicedate = '${service.getServiceDate()}', servicecategoryid = ${service.getServiceCategory()}, servicestatus = '${service.getServiceStatus()}'
             WHERE serviceid = '${service.getServiceId()}'`;
 
     try{
@@ -117,6 +119,21 @@ async function updateService(req: any, res: any){
         res.status(202).json({message: 'SERVICE_UPDATED_SUCCESSFULLY'});
     }
 } 
+
+async function updateServiceStatus(req: any, res: any){
+    const newStatus = req.body.servicestatus;
+    const serviceId = req.params['id'];
+
+    const sql: string = `UPDATE service SET servicestatus = '${newStatus}' WHERE serviceid = '${serviceId}'`
+   
+    try{
+        await db.query(sql, null);                                  
+    }catch(error){    
+        res.status(404).json({message: 'INVALID_DATA'});
+    }finally{
+        res.status(202).json({message: 'SERVICE_UPDATED_SUCCESSFULLY'});
+    }
+}
 
 async function deleteService(req: any, res: any) {
     
@@ -135,4 +152,4 @@ async function deleteService(req: any, res: any) {
 
 }
 
-export {getService, getServices, getServicesAgenda, createService, updateService, deleteService};
+export {getService, getServices, getServicesAgenda, createService, updateService, updateServiceStatus, deleteService};
