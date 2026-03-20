@@ -137,6 +137,14 @@ router.delete('/service/:id', async function (req: any, res: any){
 
 //      --------    Closure
 
+router.get('/closure', async function (req: any, res: any){
+    try{
+        res.json(await getClosures(req, res));
+    } catch(err: any){
+        console.error('Error to get closures list: ', err.message);
+    }
+})
+
 router.post('/closure', async function (req: any, res: any){
     try{
         res.json(await createClosure(req, res));
@@ -144,5 +152,6 @@ router.post('/closure', async function (req: any, res: any){
         console.error('Error to create closure: ', err.message);
     }
 })
+
 
 export default router;

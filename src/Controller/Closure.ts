@@ -77,7 +77,6 @@ async function createClosure(req: any, res: any) {
             });
         }
 
-        // Erros genéricos
         console.error('Error creating closure:', err);
         return res.status(500).json({
             message: 'Internal server error while closing month'
