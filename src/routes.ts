@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { getClient, createClient, updateClient, deleteClient } from './Controller/Client';
 import { getCategory, createCategory, updateCategory, deleteCategory }from './Controller/Category';
 import { createService, deleteService, updateService, updateServiceStatus,getServicesAgenda, getServices, getService } from './Controller/Service';
+import { getClosures, createClosure } from './Controller/Closure';
 import { error } from 'console';
 
 const router = Router();
@@ -132,6 +133,16 @@ router.delete('/service/:id', async function (req: any, res: any){
     }catch(err: any){{
         console.error('Error to update service: ', err.message);
     }}
+})
+
+//      --------    Closure
+
+router.post('/closure', async function (req: any, res: any){
+    try{
+        res.json(await createClosure(req, res));
+    } catch(err: any){
+        console.error('Error to create closure: ', err.message);
+    }
 })
 
 export default router;

@@ -6,7 +6,7 @@ class Service{
     private servicecategoryid: Number;
     private servicestatus: string;
 
-    constructor(body: any){
+    constructor(body: Service){
         this.serviceid = body.serviceid
         this.serviceclientid = body.serviceclientid;
         this.servicedate = body.servicedate;
