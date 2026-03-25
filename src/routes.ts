@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { getClient, createClient, updateClient, deleteClient } from './Controller/Client';
 import { getCategory, createCategory, updateCategory, deleteCategory }from './Controller/Category';
 import { createService, deleteService, updateService, updateServiceStatus,getServicesAgenda, getServices, getService } from './Controller/Service';
-import { getClosures, createClosure } from './Controller/Closure';
+import { getClosures, getClosureDetails, getClosureOverview, createClosure } from './Controller/Closure';
 import { error } from 'console';
 
 const router = Router();
@@ -140,6 +140,22 @@ router.delete('/service/:id', async function (req: any, res: any){
 router.get('/closure', async function (req: any, res: any){
     try{
         res.json(await getClosures(req, res));
+    } catch(err: any){
+        console.error('Error to get closures list: ', err.message);
+    }
+})
+
+router.get('/closure-details/:id', async function (req: any, res: any){
+    try{
+        res.json(await getClosureDetails(req, res));
+    } catch(err: any){
+        console.error('Error to get closures list: ', err.message);
+    }
+})
+
+router.get('/closure-overview/:id', async function (req: any, res: any){
+    try{
+        res.json(await getClosureOverview(req, res));
     } catch(err: any){
         console.error('Error to get closures list: ', err.message);
     }
