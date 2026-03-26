@@ -3,6 +3,71 @@ import { Closure, Closures } from "../Model/Closure";
 import { randomUUID } from 'crypto';
 import { error } from "console";
 
+
+function validateDateFilters(
+    startDate: string | undefined,
+    endDate: string | undefined,
+    closureMonth: string,
+    res: any
+): boolean {
+    if (!startDate && !endDate) return true;
+
+    if (!startDate || !endDate) {
+        res.status(400).json({ message: 'Both startDate and endDate are required when using date filter' });
+        return false;
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+        res.status(400).json({ message: 'Invalid startDate format. Use YYYY-MM-DD' });
+        return false;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+        res.status(400).json({ message: 'Invalid endDate format. Use YYYY-MM-DD' });
+        return false;
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (end < start) {
+        res.status(400).json({ message: 'endDate cannot be before startDate' });
+        return false;
+    }
+
+    const startYearMonth = startDate.substring(0, 7);
+    const endYearMonth = endDate.substring(0, 7);
+
+    if (startYearMonth !== closureMonth || endYearMonth !== closureMonth) {
+        res.status(400).json({ message: 'Filter dates must be within the closed month' });
+        return false;
+    }
+
+    return true;
+}
+
+function buildFilters(
+    closureMonth: string,
+    startDate?: string,
+    endDate?: string,
+    categoryId?: string
+): { dateFilter: string; categoryFilter: string; params: any[] } {
+    let dateFilter = '';
+    let categoryFilter = '';
+    const params: any[] = [closureMonth];
+
+    if (startDate && endDate) {
+        dateFilter = 'AND servicedate >= ? AND servicedate <= ?';
+        params.push(startDate, endDate);
+    }
+
+    if (categoryId) {
+        categoryFilter = 'AND ser.servicecategoryid = ?';
+        params.push(categoryId);
+    }
+
+    return { dateFilter, categoryFilter, params };
+}
+
 async function getClosures(req: any, res: any) {
 
     const page = parseInt(req.query.page as string) || 1;
@@ -48,61 +113,18 @@ async function getClosureDetails(req: any, res: any){
     const endDate = req.body.endDate;      
     const categoryId = req.body.categoryId;  
 
-    const sql: string = `SELECT closuremonthyear, closuretotalcalculated FROM closure WHERE closureid = ?`;
-    const pendingResult: any = await db.query(sql, [closureId]);
-
+    const closureQuery = `SELECT closuremonthyear FROM closure WHERE closureid = ?`;
+    const closureResult: any = await db.query(closureQuery, [closureId]);
+    
     const { 
-        closuremonthyear: closuremonth, 
-        closuretotalcalculated: totalvalue 
-    } = pendingResult[0];
+        closuremonthyear: closureMonth
+    } = closureResult[0];
 
-
-    let dateFilter = '';
-    let params: any[] = [closuremonth]
-
-    if (startDate || endDate) {
-
-        if (!startDate || !endDate) {
-            return res.status(400).json({
-                message: 'Both startDate and endDate are required when using date filter'
-            });
-        }
-
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
-        const startYearMonth = startDate.substring(0, 7);
-        const endYearMonth = endDate.substring(0, 7);
-
-        if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-            return res.status(400).json({ message: 'Invalid startDate format (YYYY-MM-DD)' });
-        }
-        if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-            return res.status(400).json({ message: 'Invalid endDate format (YYYY-MM-DD)' });
-        }
-        
-        if (startYearMonth !== closuremonth || endYearMonth !== closuremonth) {
-            return res.status(400).json({ 
-                message: 'Filter dates must be within the closed month' 
-            });
-        }
-        if (end < start) {
-            return res.status(400).json({ 
-                message: 'endDate cannot be before startDate' 
-            });
-        }
-
-        
-        dateFilter = 'AND servicedate >= ? AND servicedate <= ?';
-        params.push(startDate || `${closuremonth}-01`);
-        params.push(endDate || `${closuremonth}-31`); 
+    if (!validateDateFilters(startDate, endDate, closureMonth, res)) {
+            return; 
     }
 
-    let categoryFilter = '';
-    if (categoryId) {
-        categoryFilter = 'AND ser.servicecategoryid = ?';
-        params.push(categoryId);
-    }
+    const { dateFilter, categoryFilter, params } = buildFilters(closureMonth, startDate, endDate, categoryId);
 
     const detailsQuery = `SELECT cat.categorydescription, ser.servicedate, cat.categoryvalue as totalValue
                             FROM service ser
@@ -116,7 +138,7 @@ async function getClosureDetails(req: any, res: any){
     const detailsResult: any = await db.query(detailsQuery, params);
 
     res.status(200).json({
-        detailsResult
+        services: detailsResult
     })
     }catch(err: any){
         console.error('Error fetching closure details:', err);
@@ -133,61 +155,18 @@ async function getClosureOverview(req: any, res: any){
     const endDate = req.body.endDate;      
     const categoryId = req.body.categoryId;  
 
-    const sql: string = `SELECT closuremonthyear, closuretotalcalculated FROM closure WHERE closureid = ?`;
-    const pendingResult: any = await db.query(sql, [closureId]);
+    const closureQuery: string = `SELECT closuremonthyear FROM closure WHERE closureid = ?`;
+    const closureResult: any = await db.query(closureQuery, [closureId]);
 
     const { 
-        closuremonthyear: closuremonth, 
-        closuretotalcalculated: totalvalue 
-    } = pendingResult[0];
+        closuremonthyear: closureMonth, 
+    } = closureResult[0];
 
-
-    let dateFilter = '';
-    let params: any[] = [closuremonth]
-
-    if (startDate || endDate) {
-
-        if (!startDate || !endDate) {
-            return res.status(400).json({
-                message: 'Both startDate and endDate are required when using date filter'
-            });
-        }
-
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        
-        const startYearMonth = startDate.substring(0, 7);
-        const endYearMonth = endDate.substring(0, 7);
-
-        if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-            return res.status(400).json({ message: 'Invalid startDate format (YYYY-MM-DD)' });
-        }
-        if (endDate && !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-            return res.status(400).json({ message: 'Invalid endDate format (YYYY-MM-DD)' });
-        }
-        
-        if (startYearMonth !== closuremonth || endYearMonth !== closuremonth) {
-            return res.status(400).json({ 
-                message: 'Filter dates must be within the closed month' 
-            });
-        }
-        if (end < start) {
-            return res.status(400).json({ 
-                message: 'endDate cannot be before startDate' 
-            });
-        }
-
-        
-        dateFilter = 'AND servicedate >= ? AND servicedate <= ?';
-        params.push(startDate || `${closuremonth}-01`);
-        params.push(endDate || `${closuremonth}-31`); 
+    if (!validateDateFilters(startDate, endDate, closureMonth, res)) {
+        return;
     }
 
-    let categoryFilter = '';
-    if (categoryId) {
-        categoryFilter = 'AND ser.servicecategoryid = ?';
-        params.push(categoryId);
-    }
+    const { dateFilter, categoryFilter, params } = buildFilters(closureMonth, startDate, endDate, categoryId);
 
     const overviewQuery = `SELECT COUNT(*) as serviceCount, SUM(cat.categoryvalue) as filteredTotal
                             FROM service ser
@@ -198,7 +177,6 @@ async function getClosureOverview(req: any, res: any){
                             AND ser.servicestatus = 'concluido'
                             ORDER BY ser.servicedate;`
     
-
     const overviewResult: any = await db.query(overviewQuery, params);
 
     const { serviceCount, filteredTotal } = overviewResult[0] || { serviceCount: 0, filteredTotal: 0 };
