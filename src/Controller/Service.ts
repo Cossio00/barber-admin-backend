@@ -87,6 +87,19 @@ async function createService(req: any, res: any){
     const service = new Service(req.body)
     service.setServiceId(serviceID.slice(0, 30));
     
+    const serviceDate = new Date(service.getServiceDate());
+
+    const restrainDate: string = `SELECT * FROM closure 
+            WHERE closuremonthyear = ?;`
+
+    const restrain: any = await db.query(restrainDate, [serviceDate.getFullYear() + "-" +
+        (serviceDate.getMonth() + 1).toString().padStart(2, '0')])
+    
+    if (restrain.length !== 0) {
+        res.status(400).json({ message: 'Closed month. Cannot create service' });
+        return false;
+    }
+    
     const sql: string = `INSERT INTO service (serviceid, serviceclientid, servicedate, servicecategoryid)
             VALUES
             ('${service.getServiceId()}', '${service.getServiceClient()}', '${service.getServiceDate()}', ${service.getServiceCategory()})`
@@ -101,55 +114,170 @@ async function createService(req: any, res: any){
     }
 }
 
-async function updateService(req: any, res: any){
-
+async function updateService(req: any, res: any) {
+    const serviceId = req.params.id;
     const service = new Service(req.body);
-    const serviceId = req.params['id'];
     service.setServiceId(serviceId);
 
-    const sql: string = `UPDATE service
-            SET serviceclientid = '${service.getServiceClient()}', servicedate = '${service.getServiceDate()}', servicecategoryid = ${service.getServiceCategory()}, servicestatus = '${service.getServiceStatus()}'
-            WHERE serviceid = '${service.getServiceId()}'`;
+    try {
+        const currentServiceQuery = `SELECT servicedate FROM service WHERE serviceid = ?`;
+        const currentResult: any = await db.query(currentServiceQuery, [serviceId]);
 
-    try{
-        await db.query(sql, null);                                   // Add validation when id is not present in db
-    }catch(error){    
-        res.status(404).json({message: 'INVALID_DATA'});
-    }finally{
-        res.status(202).json({message: 'SERVICE_UPDATED_SUCCESSFULLY'});
+        if (currentResult.length === 0) {
+            return res.status(404).json({ message: 'Service not found' });
+        }
+
+        const currentDate = new Date(currentResult[0].servicedate);
+        const currentMonthYear = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+        const checkCurrentClosure: any = await db.query(
+            `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`, 
+            [currentMonthYear]
+        );
+
+        if (checkCurrentClosure.length > 0) {
+            return res.status(403).json({ 
+                message: 'Cannot update service: original month is closed' 
+            });
+        }
+
+        const newServiceDate = new Date(service.getServiceDate());
+        const newMonthYear = `${newServiceDate.getFullYear()}-${(newServiceDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+        if (newMonthYear !== currentMonthYear) {
+            const checkNewClosure: any = await db.query(
+                `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`, 
+                [newMonthYear]
+            );
+
+            if (checkNewClosure.length > 0) {
+                return res.status(403).json({ 
+                    message: 'Cannot move service to a closed month' 
+                });
+            }
+        }
+
+        const updateSql = `
+            UPDATE service 
+            SET serviceclientid = ?, 
+                servicedate = ?, 
+                servicecategoryid = ?,
+                servicestatus = ?
+            WHERE serviceid = ?
+        `;
+
+        await db.query(updateSql, [
+            service.getServiceClient(),
+            service.getServiceDate(),
+            service.getServiceCategory(),
+            service.getServiceStatus() || 'agendado',
+            serviceId
+        ]);
+
+        res.status(200).json({ message: 'SERVICE_UPDATED_SUCCESSFULLY' });
+
+    } catch (error: any) {
+        console.error('Error updating service:', error);
+        res.status(500).json({ message: 'ERROR_UPDATING_SERVICE' });
     }
-} 
+}
 
-async function updateServiceStatus(req: any, res: any){
+async function updateServiceStatus(req: any, res: any) {
+    const serviceId = req.params.id;
     const newStatus = req.body.servicestatus;
-    const serviceId = req.params['id'];
 
-    const sql: string = `UPDATE service SET servicestatus = '${newStatus}' WHERE serviceid = '${serviceId}'`
-   
-    try{
-        await db.query(sql, null);                                  
-    }catch(error){    
-        res.status(404).json({message: 'INVALID_DATA'});
-    }finally{
-        res.status(202).json({message: 'SERVICE_UPDATED_SUCCESSFULLY'});
+    if (!serviceId) {
+        return res.status(400).json({ message: 'Missing service ID' });
+    }
+
+    if (!newStatus || !['agendado', 'concluido', 'cancelado'].includes(newStatus)) {
+        return res.status(400).json({ 
+            message: 'Invalid status. Allowed values: agendado, concluido, cancelado' 
+        });
+    }
+
+    try {
+        const checkQuery = `
+            SELECT DATE_FORMAT(s.servicedate, '%Y-%m') as monthYear 
+            FROM service s 
+            WHERE s.serviceid = ?
+        `;
+        const result: any = await db.query(checkQuery, [serviceId]);
+
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'Service not found' });
+        }
+
+        const monthYear = result[0].monthYear;
+
+        const closureCheck: any = await db.query(
+            `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`,
+            [monthYear]
+        );
+
+        if (closureCheck.length > 0) {
+            return res.status(403).json({ 
+                message: 'Cannot update status: service belongs to a closed month' 
+            });
+        }
+
+        const updateSql = `
+            UPDATE service 
+            SET servicestatus = ? 
+            WHERE serviceid = ?
+        `;
+
+        await db.query(updateSql, [newStatus, serviceId]);
+
+        res.status(200).json({ 
+            message: 'SERVICE_STATUS_UPDATED_SUCCESSFULLY',
+            serviceId,
+            newStatus 
+        });
+
+    } catch (error: any) {
+        console.error('Error updating service status:', error);
+        res.status(500).json({ message: 'ERROR_UPDATING_SERVICE_STATUS' });
     }
 }
 
 async function deleteService(req: any, res: any) {
-    
-    const serviceId = req.params['id'];
+    const serviceId = req.params.id;
 
-    const sql: string = `DELETE FROM service 
-            WHERE serviceid = '${serviceId}'`;
+    try {
+        const checkQuery = `
+            SELECT DATE_FORMAT(s.servicedate, '%Y-%m') as monthYear 
+            FROM service s 
+            WHERE s.serviceid = ?
+        `;
+        const result: any = await db.query(checkQuery, [serviceId]);
 
-    try{
-        await db.query(sql, null);                                  // Add validation when id is not present in db
-    }catch(err){
-        res.status(404).json({message: 'ERROR'});
-    }finally{
-        res.status(202).json({message: 'SERVICE_DELETED_SUCCESSFULLY'});
+        if (result.length === 0) {
+            return res.status(404).json({ message: 'Service not found' });
+        }
+
+        const monthYear = result[0].monthYear;
+
+        const closureCheck: any = await db.query(
+            `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`, 
+            [monthYear]
+        );
+
+        if (closureCheck.length > 0) {
+            return res.status(403).json({ 
+                message: 'Cannot delete service from a closed month' 
+            });
+        }
+
+        const deleteSql = `DELETE FROM service WHERE serviceid = ?`;
+        await db.query(deleteSql, [serviceId]);
+
+        res.status(200).json({ message: 'SERVICE_DELETED_SUCCESSFULLY' });
+
+    } catch (error: any) {
+        console.error('Error deleting service:', error);
+        res.status(500).json({ message: 'ERROR_DELETING_SERVICE' });
     }
-
 }
 
 export {getService, getServices, getServicesAgenda, createService, updateService, updateServiceStatus, deleteService};
