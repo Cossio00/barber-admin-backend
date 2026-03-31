@@ -9,7 +9,7 @@ async function getService(req: any, res: any){
 
     const id = req.params['id']
 
-    const sql = `SELECT s.serviceid,  c.clientid, c.clientname, s.servicedate, ca.categorydescription
+    const sql = `SELECT s.serviceid,  c.clientid, c.clientname, s.servicedate, s.servicecategoryid as servicecategory, ca.categorydescription as servicecategoryname
                     FROM service s 
                     JOIN client c ON s.serviceclientid = c.clientid
                     JOIN category ca ON s.servicecategoryid = ca.categoryid
@@ -159,18 +159,14 @@ async function updateService(req: any, res: any) {
 
         const updateSql = `
             UPDATE service 
-            SET serviceclientid = ?, 
-                servicedate = ?, 
-                servicecategoryid = ?,
-                servicestatus = ?
+            SET servicedate = ?, 
+                servicecategoryid = ?
             WHERE serviceid = ?
         `;
 
         await db.query(updateSql, [
-            service.getServiceClient(),
             service.getServiceDate(),
             service.getServiceCategory(),
-            service.getServiceStatus() || 'agendado',
             serviceId
         ]);
 

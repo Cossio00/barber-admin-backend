@@ -4,7 +4,8 @@ class ServiceGet {
     private clientname: string;
     private servicedate: string;
     private servicecategory: string;
-    private categoryvalue: number; // novo campo
+    private servicecategoryname: string;
+    private categoryvalue: number;
     private servicestatus: string;
 
 
@@ -14,7 +15,8 @@ class ServiceGet {
         this.clientname = body.clientname;
         this.servicedate = body.servicedate;
         this.servicecategory = body.servicecategory;
-        this.categoryvalue = body.categoryvalue; // vindo do join
+        this.servicecategoryname = body.servicecategoryname;
+        this.categoryvalue = body.categoryvalue;
         this.servicestatus = body.servicestatus;
     }
 
@@ -36,6 +38,10 @@ class ServiceGet {
 
     getServiceCategory() {
         return this.servicecategory;
+    }
+    
+    getServiceCategoryName() {
+        return this.servicecategoryname;
     }
 
     getCategoryValue() {
@@ -64,6 +70,10 @@ class ServiceGet {
 
     setServiceCategory(serviceCategory: string) {
         this.servicecategory = serviceCategory;
+    }
+    
+    setServiceCategoryName(categoryName: string) {
+        this.servicecategoryname = categoryName;
     }
 
     setCategoryValue(value: number) {
