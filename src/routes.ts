@@ -12,7 +12,7 @@ const router = Router();
 
 router.get('/client', async function(req: any, res: any){
     try{
-        res.json(await getClient(req, res));
+        await getClient(req, res);
     } catch(err: any){
         console.error('Error to get clients list: ', err.message);
     }
@@ -20,7 +20,7 @@ router.get('/client', async function(req: any, res: any){
 
 router.post('/client', async function(req: any, res: any){
     try{
-        res.json(await createClient(req, res));
+        await createClient(req, res);
     } catch(err: any){
         console.error('Error to create client: ', err.message);
     }
@@ -28,7 +28,7 @@ router.post('/client', async function(req: any, res: any){
 
 router.put('/client/:id', async function (req: any, res: any) {
     try{
-        res.json(await updateClient(req, res));
+        await updateClient(req, res);
     } catch(err: any){
         console.error('Error to update client: ', err.message);
     }
@@ -36,7 +36,7 @@ router.put('/client/:id', async function (req: any, res: any) {
 
 router.delete('/client/:id', async function (req: any, res: any) {
     try{
-        res.json(await deleteClient(req, res));
+        await deleteClient(req, res);
     } catch(err: any){
         console.error('Error to delete client: ', err.message);
     }

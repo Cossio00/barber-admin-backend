@@ -40,46 +40,56 @@ async function getClosures(req: any, res: any) {
     }
 }
 
-async function getClosureDetails(req: any, res: any){
-
+async function getClosureDetails(req: any, res: any) {
+  try {
     const closureId = req.params['id'];
-
-    try{
-    const startDate = req.body.startDate;  
-    const endDate = req.body.endDate;      
-    const categoryId = req.body.categoryId;  
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const categoryId = req.query.categoryId as string | undefined;
 
     const closureQuery = `SELECT closuremonthyear FROM closure WHERE closureid = ?`;
     const closureResult: any = await db.query(closureQuery, [closureId]);
-    
-    const { 
-        closuremonthyear: closureMonth
-    } = closureResult[0];
 
-    if (!validateDateFilters(startDate, endDate, closureMonth, res)) {
-            return; 
+    if (!closureResult || closureResult.length === 0) {
+      return res.status(404).json({ message: 'Closure not found' });
     }
 
-    const { dateFilter, categoryFilter, params } = buildFilters(closureMonth, startDate, endDate, categoryId);
+    const { closuremonthyear: closureMonth } = closureResult[0];
 
-    const detailsQuery = `SELECT cat.categorydescription, ser.servicedate, cat.categoryvalue as totalValue
-                            FROM service ser
-                            JOIN category cat ON ser.servicecategoryid = cat.categoryid
-                            WHERE DATE_FORMAT(ser.servicedate, '%Y-%m') = ?
-                            ${dateFilter}
-                            ${categoryFilter}
-                            AND ser.servicestatus = 'concluido'
-                            ORDER BY ser.servicedate;`
+    if (!validateDateFilters(startDate, endDate, closureMonth, res)) {
+      return;
+    }
+
+    const { dateFilter, categoryFilter, params } = buildFilters(
+      closureMonth, 
+      startDate, 
+      endDate, 
+      categoryId
+    );
+
+    const detailsQuery = `
+      SELECT 
+        cat.categorydescription, 
+        ser.servicedate, 
+        cat.categoryvalue as totalValue
+      FROM service ser
+      JOIN category cat ON ser.servicecategoryid = cat.categoryid
+      WHERE DATE_FORMAT(ser.servicedate, '%Y-%m') = ?
+        ${dateFilter}
+        ${categoryFilter}
+        AND ser.servicestatus = 'concluido'
+      ORDER BY ser.servicedate;
+    `;
 
     const detailsResult: any = await db.query(detailsQuery, params);
 
     res.status(200).json({
-        services: detailsResult
-    })
-    }catch(err: any){
-        console.error('Error fetching closure details:', err);
-        res.status(500).json({ message: 'Internal error while fetching closure details' });
-    }
+      services: detailsResult
+    });
+  } catch (err: any) {
+    console.error('Error fetching closure details:', err);
+    res.status(500).json({ message: 'Internal error while fetching closure details' });
+  }
 }
 
 async function getClosureOverview(req: any, res: any){
@@ -94,15 +104,13 @@ async function getClosureOverview(req: any, res: any){
     const closureQuery: string = `SELECT closuremonthyear FROM closure WHERE closureid = ?`;
     const closureResult: any = await db.query(closureQuery, [closureId]);
 
-    const { 
-        closuremonthyear: closureMonth, 
-    } = closureResult[0];
+    const { closuremonthyear } = closureResult[0];
 
-    if (!validateDateFilters(startDate, endDate, closureMonth, res)) {
+    if (!validateDateFilters(startDate, endDate, closuremonthyear, res)) {
         return;
     }
 
-    const { dateFilter, categoryFilter, params } = buildFilters(closureMonth, startDate, endDate, categoryId);
+    const { dateFilter, categoryFilter, params } = buildFilters(closuremonthyear, startDate, endDate, categoryId);
 
     const overviewQuery = `SELECT COUNT(*) as serviceCount, SUM(cat.categoryvalue) as filteredTotal
                             FROM service ser
@@ -119,6 +127,7 @@ async function getClosureOverview(req: any, res: any){
     const average = serviceCount > 0 ? filteredTotal / serviceCount : 0;
 
     res.status(200).json({
+        closuremonthyear,
         serviceCount,
         filteredTotal,
         average
