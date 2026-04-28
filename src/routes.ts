@@ -46,7 +46,7 @@ router.delete('/client/:id', async function (req: any, res: any) {
 
 router.get('/category', async function (req: any, res: any) {
     try{
-        res.json(await getCategory(req, res));
+        await getCategory(req, res);
     } catch(err: any){
         console.error('Error to get categories list: ', err.message);
     }
@@ -54,7 +54,7 @@ router.get('/category', async function (req: any, res: any) {
 
 router.post('/category', async function (req: any, res: any) {
     try{
-        res.json(await createCategory(req, res));
+        await createCategory(req, res);
     } catch(err: any){
         console.error('Error to create category: ', err.message);
     }
@@ -62,7 +62,7 @@ router.post('/category', async function (req: any, res: any) {
 
 router.put('/category/:id', async function (req: any, res: any) {
     try{
-        res.json(await updateCategory(req, res));
+        await updateCategory(req, res);
     } catch(err: any){
         console.error('Error to update category: ', err.message);
     }
@@ -70,7 +70,7 @@ router.put('/category/:id', async function (req: any, res: any) {
 
 router.delete('/category/:id', async function (req: any, res: any) {
     try{
-        res.json(await deleteCategory(req, res));
+        await deleteCategory(req, res);
     } catch(err: any){
         console.error('Error to delete category: ', err.message);
     }

@@ -1,7 +1,6 @@
 import db from '../dbConfig/db';
 import { randomUUID } from 'crypto';
 import { Client, Clients } from '../Model/Client';
-import { error } from 'console';
 import ApiResponse from '../Utils/apiResponse';
 
 
