@@ -5,6 +5,21 @@ import { error } from 'console';
 import ApiResponse from '../Utils/apiResponse';
 
 
+function validateClientData(client: Client): { isValid: boolean; errorMessage?: string; errorTag?: string } {
+  const name = client.getName()?.trim();
+  const phone = client.getPhone()?.trim();
+
+   if (!name || name.length === 0) {
+    return { isValid: false, errorMessage: "Nome do cliente é obrigatório", errorTag: "MISSING_CLIENT_NAME" };
+  }
+
+  if (!phone || phone.length === 0) {
+    return { isValid: false, errorMessage: "Telefone do cliente é obrigatório", errorTag: "MISSING_CLIENT_PHONE" };
+  }
+
+  return { isValid: true };
+}
+
 async function getClient(req: any, res: any){
   
   try {
@@ -19,7 +34,10 @@ async function getClient(req: any, res: any){
 
   } catch (err: any) {
     console.error('Error fetching clients:', err);
-    return ApiResponse.error(res, "Erro ao buscar lista de clientes", "FETCH_CLIENTS_ERROR", 500);
+    if (err.code === 'ECONNREFUSED' || err.code === 'ER_CON_COUNT_ERROR') {
+      return ApiResponse.error(res, "Erro de conexão com o banco de dados", "DB_CONNECTION_ERROR", 500);
+    }
+    return ApiResponse.error(res, "Erro ao buscar lista de clientes", "DB_SELECT_FAILED", 500);
   }
 
 }
@@ -31,17 +49,29 @@ async function createClient(req: any, res: any) {
     const client = new Client(req.body);
     client.setId(clientID);
 
+    const validation = validateClientData(client);
+    if (!validation.isValid) {
+      return ApiResponse.error(res, validation.errorMessage!, validation.errorTag!, 400);
+    }
+
     const sql = `INSERT INTO client (clientid, clientname, clientphone) VALUES (?, ?, ?)`;
     const result: any = await db.query(sql, [client.getId(), client.getName(), client.getPhone()]);
 
     if (result.affectedRows > 0) {
       return ApiResponse.success(res, "Cliente criado com sucesso", { clientId: clientID }, 201);
     }
-    return ApiResponse.error(res, "Não foi possível criar o cliente", "CREATE_FAILED", 400);
+    
+    return ApiResponse.error(res, "Não foi possível inserir o cliente no banco de dados", "DB_INSERT_FAILED", 500);
+    
   } catch (err: any) {
     console.error('Error creating client:', err);
-    return ApiResponse.error(res, "Erro ao criar cliente. Verifique os dados.", "CREATE_CLIENT_ERROR", 500);
+    
+    if (err.code === 'ER_DUP_ENTRY') {
+      return ApiResponse.error(res, "Cliente com identificador duplicado", "DUPLICATE_CLIENT_ENTRY", 409);
+    }
+    return ApiResponse.error(res, "Erro interno ao criar cliente", "CREATE_CLIENT_FAILED", 500);
   }
+
 
 }
 
@@ -50,6 +80,11 @@ async function updateClient(req: any, res: any) {
     const client = new Client(req.body);
     const clientId = req.params['id'];
     client.setId(clientId);
+
+    const validation = validateClientData(client);
+    if (!validation.isValid) {
+      return ApiResponse.error(res, validation.errorMessage!, validation.errorTag!, 400);
+    }
 
     const checkSql = `SELECT clientid FROM client WHERE clientid = ?`;
     const checkResult: any = await db.query(checkSql, [clientId]);
@@ -70,11 +105,16 @@ async function updateClient(req: any, res: any) {
       return ApiResponse.success(res, "Cliente atualizado com sucesso");
     }
 
-    return ApiResponse.error(res, "Não foi possível atualizar o cliente", "UPDATE_FAILED", 400);
+    return ApiResponse.error(res, "Não foi possível atualizar o cliente no banco de dados", "DB_UPDATE_FAILED", 500);
 
   } catch (err: any) {
     console.error('Error updating client:', err);
-    return ApiResponse.error(res, "Erro ao atualizar cliente", "UPDATE_CLIENT_ERROR", 500);
+    
+    if (err.code === 'ER_DUP_ENTRY') {
+      return ApiResponse.error(res, "Conflito de dados ao atualizar cliente", "DUPLICATE_CLIENT_ENTRY", 409);
+    }
+    
+    return ApiResponse.error(res, "Erro interno ao atualizar cliente", "UPDATE_CLIENT_FAILED", 500);
   }
 }
 
@@ -96,11 +136,16 @@ async function deleteClient(req: any, res: any) {
       return ApiResponse.success(res, "Cliente removido com sucesso");
     }
 
-    return ApiResponse.error(res, "Não foi possível remover o cliente", "DELETE_FAILED", 400);
+    return ApiResponse.error(res, "Não foi possível remover o cliente do banco de dados", "DB_DELETE_FAILED", 500);
 
   } catch (err: any) {
     console.error('Error deleting client:', err);
-    return ApiResponse.error(res, "Erro ao remover cliente", "DELETE_CLIENT_ERROR", 500);
+    
+    if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.code === 'ER_ROW_IS_REFERENCED') {
+      return ApiResponse.error(res, "Não é possível excluir cliente pois existem registros vinculados", "CLIENT_HAS_DEPENDENCIES", 409);
+    }
+    
+    return ApiResponse.error(res, "Erro interno ao remover cliente", "DELETE_CLIENT_FAILED", 500);
   }
 }
 
