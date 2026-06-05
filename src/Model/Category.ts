@@ -51,4 +51,5 @@ class Categories{
         return this.categories;
     }
 }
+
 export {Category, Categories};

@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { getClient, createClient, updateClient, deleteClient } from './Controller/Client';
 import { getCategory, createCategory, updateCategory, deleteCategory }from './Controller/Category';
+import { createService, deleteService, updateService, updateServiceStatus,getServicesAgenda, getServices, getService } from './Controller/Service';
+import { getClosures, getClosureDetails, getClosureOverview, createClosure } from './Controller/Closure';
+import { error } from 'console';
 
 const router = Router();
 
@@ -9,7 +12,7 @@ const router = Router();
 
 router.get('/client', async function(req: any, res: any){
     try{
-        res.json(await getClient(req, res));
+        await getClient(req, res);
     } catch(err: any){
         console.error('Error to get clients list: ', err.message);
     }
@@ -17,7 +20,7 @@ router.get('/client', async function(req: any, res: any){
 
 router.post('/client', async function(req: any, res: any){
     try{
-        res.json(await createClient(req, res));
+        await createClient(req, res);
     } catch(err: any){
         console.error('Error to create client: ', err.message);
     }
@@ -25,7 +28,7 @@ router.post('/client', async function(req: any, res: any){
 
 router.put('/client/:id', async function (req: any, res: any) {
     try{
-        res.json(await updateClient(req, res));
+        await updateClient(req, res);
     } catch(err: any){
         console.error('Error to update client: ', err.message);
     }
@@ -33,7 +36,7 @@ router.put('/client/:id', async function (req: any, res: any) {
 
 router.delete('/client/:id', async function (req: any, res: any) {
     try{
-        res.json(await deleteClient(req, res));
+        await deleteClient(req, res);
     } catch(err: any){
         console.error('Error to delete client: ', err.message);
     }
@@ -43,7 +46,7 @@ router.delete('/client/:id', async function (req: any, res: any) {
 
 router.get('/category', async function (req: any, res: any) {
     try{
-        res.json(await getCategory(req, res));
+        await getCategory(req, res);
     } catch(err: any){
         console.error('Error to get categories list: ', err.message);
     }
@@ -51,7 +54,7 @@ router.get('/category', async function (req: any, res: any) {
 
 router.post('/category', async function (req: any, res: any) {
     try{
-        res.json(await createCategory(req, res));
+        await createCategory(req, res);
     } catch(err: any){
         console.error('Error to create category: ', err.message);
     }
@@ -59,7 +62,7 @@ router.post('/category', async function (req: any, res: any) {
 
 router.put('/category/:id', async function (req: any, res: any) {
     try{
-        res.json(await updateCategory(req, res));
+        await updateCategory(req, res);
     } catch(err: any){
         console.error('Error to update category: ', err.message);
     }
@@ -67,9 +70,102 @@ router.put('/category/:id', async function (req: any, res: any) {
 
 router.delete('/category/:id', async function (req: any, res: any) {
     try{
-        res.json(await deleteCategory(req, res));
+        await deleteCategory(req, res);
     } catch(err: any){
         console.error('Error to delete category: ', err.message);
+    }
+})
+
+//      --------    SERVICE
+
+router.get('/service-agenda/:id', async function (req: any, res: any){
+
+    try{
+        await getService(req, res);
+    } catch(err: any){
+        console.error('Error to get service: ', err.message);
+    }
+})
+
+router.get('/service-agenda', async function (req: any, res: any){
+    try{
+        await getServices(req, res);
+    } catch(err: any){
+        console.error('Error to get services: ', err.message);
+    }
+})
+
+router.post('/service-agenda', async function (req: any, res: any){
+    try{
+        await getServicesAgenda(req, res);
+    } catch(err: any){
+        console.error('Error to get services list: ', err.message);
+    }
+})
+
+router.post('/service', async function (req: any, res: any){
+    try{
+        await createService(req, res);
+    } catch(err: any){
+        console.error('Error to create service: ', err.message);
+    }
+})
+
+router.put('/service/:id', async function (req: any, res: any){
+    try{
+        await updateService(req, res);
+    }catch(err: any){{
+        console.error('Error to update service: ', err.message);
+    }}
+})
+
+router.put('/service-status/:id', async function (req: any, res: any){
+    try{
+        await updateServiceStatus(req, res);
+    }catch(err: any){{
+        console.error('Error to update service: ', err.message);
+    }}
+})
+
+router.delete('/service/:id', async function (req: any, res: any){
+    try{
+        await deleteService(req, res);
+    }catch(err: any){{
+        console.error('Error to update service: ', err.message);
+    }}
+})
+
+//      --------    Closure
+
+router.get('/closure', async function (req: any, res: any){
+    try{
+        res.json(await getClosures(req, res));
+    } catch(err: any){
+        console.error('Error to get closures list: ', err.message);
+    }
+})
+
+router.get('/closure-details/:id', async function (req: any, res: any){
+    try{
+        res.json(await getClosureDetails(req, res));
+    } catch(err: any){
+        console.error('Error to get closures list: ', err.message);
+    }
+})
+
+router.get('/closure-overview/:id', async function (req: any, res: any){
+    try{
+        res.json(await getClosureOverview(req, res));
+    } catch(err: any){
+        console.error('Error to get closures list: ', err.message);
+    }
+})
+
+router.post('/closure', async function (req: any, res: any){
+    try{
+        res.json(await createClosure(req, res));
+    } catch(err: any){
+        console.error('Error to create closure: ', err.message);
     }
 })
 
