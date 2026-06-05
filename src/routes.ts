@@ -81,23 +81,23 @@ router.delete('/category/:id', async function (req: any, res: any) {
 router.get('/service-agenda/:id', async function (req: any, res: any){
 
     try{
-        res.json(await getService(req, res));
+        await getService(req, res);
     } catch(err: any){
-        console.error('Error to delete category: ', err.message);
+        console.error('Error to get service: ', err.message);
     }
 })
 
 router.get('/service-agenda', async function (req: any, res: any){
     try{
-        res.json(await getServices(req, res));
+        await getServices(req, res);
     } catch(err: any){
-        console.error('Error to delete category: ', err.message);
+        console.error('Error to get services: ', err.message);
     }
 })
 
 router.post('/service-agenda', async function (req: any, res: any){
     try{
-        res.json(await getServicesAgenda(req, res));
+        await getServicesAgenda(req, res);
     } catch(err: any){
         console.error('Error to get services list: ', err.message);
     }
@@ -105,7 +105,7 @@ router.post('/service-agenda', async function (req: any, res: any){
 
 router.post('/service', async function (req: any, res: any){
     try{
-        res.json(await createService(req, res));
+        await createService(req, res);
     } catch(err: any){
         console.error('Error to create service: ', err.message);
     }
@@ -113,7 +113,7 @@ router.post('/service', async function (req: any, res: any){
 
 router.put('/service/:id', async function (req: any, res: any){
     try{
-        res.json(await updateService(req, res));
+        await updateService(req, res);
     }catch(err: any){{
         console.error('Error to update service: ', err.message);
     }}
@@ -121,7 +121,7 @@ router.put('/service/:id', async function (req: any, res: any){
 
 router.put('/service-status/:id', async function (req: any, res: any){
     try{
-        res.json(await updateServiceStatus(req, res));
+        await updateServiceStatus(req, res);
     }catch(err: any){{
         console.error('Error to update service: ', err.message);
     }}
@@ -129,7 +129,7 @@ router.put('/service-status/:id', async function (req: any, res: any){
 
 router.delete('/service/:id', async function (req: any, res: any){
     try{
-        res.json(await deleteService(req, res));
+        await deleteService(req, res);
     }catch(err: any){{
         console.error('Error to update service: ', err.message);
     }}

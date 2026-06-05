@@ -3,26 +3,37 @@ import { randomUUID } from 'crypto';
 import { Service, Services } from '../Model/Service';
 import { ServiceGet, ServicesGet } from '../Model/ServiceGetRequest';
 import { error } from 'console';
+import ApiResponse from '../Utils/apiResponse';
  
 
 async function getService(req: any, res: any){
 
+  try{
+    
     const id = req.params['id']
 
     const sql = `SELECT s.serviceid,  c.clientid, c.clientname, s.servicedate, s.servicecategoryid as servicecategory, ca.categorydescription as servicecategoryname
-                    FROM service s 
-                    JOIN client c ON s.serviceclientid = c.clientid
-                    JOIN category ca ON s.servicecategoryid = ca.categoryid
-                    WHERE s.serviceid = '${id}';`
-    
-    const rows : any = await db.query(sql, null);
+                FROM service s 
+                JOIN client c ON s.serviceclientid = c.clientid
+                JOIN category ca ON s.servicecategoryid = ca.categoryid
+                WHERE s.serviceid = ?;`
+
+    const rows : any = await db.query(sql, [id]);
 
     const service = new ServiceGet(rows[0]);
+    return ApiResponse.successList(res, service);
+  } catch (err: any) {
+    console.error('Error fetching service:', err);
     
-    return service;
+    if (err.code === 'ECONNREFUSED' || err.code === 'ER_CON_COUNT_ERROR') {
+    return ApiResponse.error(res, "Erro de conexão com o banco de dados", "DB_CONNECTION_ERROR", 500);
+    }
+    return ApiResponse.error(res, "Erro ao buscar serviço", "DB_SELECT_FAILED", 500);
+  }
 }
 
 async function getServices(req: any, res: any) {
+    
     try {
         const sql = `
             SELECT s.serviceid,
@@ -46,14 +57,19 @@ async function getServices(req: any, res: any) {
             services.add(service);
         }
 
-        res.status(200).json(services);
-    } catch (err) {
-        res.status(500).json({ message: "ERROR_FETCHING_SERVICES", error: err });
+        return ApiResponse.successList(res, { services: services.list() }, "Serviços listados com sucesso");
+    } catch (err: any) {
+        console.error('Error fetching services:', err);
+        if (err.code === 'ECONNREFUSED' || err.code === 'ER_CON_COUNT_ERROR') {
+          return ApiResponse.error(res, "Erro de conexão com o banco de dados", "DB_CONNECTION_ERROR", 500);
+        }
+        return ApiResponse.error(res, "Erro ao buscar lista de serviços", "DB_SELECT_FAILED", 500);
     }
 }
 
 async function getServicesAgenda(req: any, res: any){
 
+  try{
     const date = req.body.date
 
     const sql = `SELECT s.serviceid,
@@ -66,10 +82,10 @@ async function getServicesAgenda(req: any, res: any){
                     FROM service s
                     JOIN client c ON s.serviceclientid = c.clientid
                     JOIN category cat ON s.servicecategoryid = cat.categoryid
-                    WHERE DATE(s.servicedate) = '${date}'
+                    WHERE DATE(s.servicedate) = ?
                     ORDER BY s.servicedate;`
     
-    const rows : any = await db.query(sql, null);
+    const rows : any = await db.query(sql, [date]);
 
     const services = new ServicesGet();
 
@@ -77,203 +93,200 @@ async function getServicesAgenda(req: any, res: any){
         const service = new ServiceGet(row);
         services.add(service);
     }
-
-    return services;
+    return ApiResponse.successList(res, { services: services.list() }, "Serviços listados com sucesso");
+  } catch (err: any) {
+      console.error('Error fetching services:', err);
+      if (err.code === 'ECONNREFUSED' || err.code === 'ER_CON_COUNT_ERROR') {
+        return ApiResponse.error(res, "Erro de conexão com o banco de dados", "DB_CONNECTION_ERROR", 500);
+      }
+      return ApiResponse.error(res, "Erro ao buscar lista de serviços", "DB_SELECT_FAILED", 500);
+  }
 }
 
 async function createService(req: any, res: any){
 
-    let serviceID = randomUUID();
+  try{
+    let serviceID = randomUUID().slice(0, 30);
     const service = new Service(req.body)
-    service.setServiceId(serviceID.slice(0, 30));
+    service.setServiceId(serviceID);
     
     const serviceDate = new Date(service.getServiceDate());
 
-    const restrainDate: string = `SELECT * FROM closure 
-            WHERE closuremonthyear = ?;`
+    const monthYear = `${serviceDate.getFullYear()}-${(serviceDate.getMonth() + 1).toString().padStart(2, '0')}`;
 
-    const restrain: any = await db.query(restrainDate, [serviceDate.getFullYear() + "-" +
-        (serviceDate.getMonth() + 1).toString().padStart(2, '0')])
+    const restrainDate: any = await db.query(
+      `SELECT * FROM closure WHERE closuremonthyear = ?`,
+      [monthYear]
+    );
     
-    if (restrain.length !== 0) {
-        res.status(400).json({ message: 'Closed month. Cannot create service' });
-        return false;
+    if (restrainDate.length !== 0) {
+      return ApiResponse.error(res, "Mês já fechado. Não é possível criar novo serviço.", "MONTH_ALREADY_CLOSED", 403);
     }
     
     const sql: string = `INSERT INTO service (serviceid, serviceclientid, servicedate, servicecategoryid)
-            VALUES
-            ('${service.getServiceId()}', '${service.getServiceClient()}', '${service.getServiceDate()}', ${service.getServiceCategory()})`
+            VALUES (?, ?, ?, ?)`;
 
-    try{
-        const result : any = await db.query(sql, null);
-        if(result.affectedRows != 0)
-            res.status(202).json({message: 'SERVICE_CREATED_SUCCESSFULLY'});
-        else throw error
-    }catch(error){
-        res.status(404).json({message: 'ERROR_CREATING_SERVICE:', error});
+    const result : any = await db.query(sql, [
+      service.getServiceId(),
+      service.getServiceClient(),
+      service.getServiceDate(),
+      service.getServiceCategory()
+    ]);
+    
+    if(result.affectedRows > 0)
+      return ApiResponse.success(res, "Serviço agendado com sucesso", { serviceId: serviceID }, 201);
+    return ApiResponse.error(res, "Não foi possível criar o serviço", "DB_INSERT_FAILED", 500);
+    } catch (err: any) {
+      console.error('Error creating service:', err);
+      return ApiResponse.error(res, "Erro interno ao criar serviço", "CREATE_SERVICE_FAILED", 500);
     }
 }
 
 async function updateService(req: any, res: any) {
+  try {
     const serviceId = req.params.id;
     const service = new Service(req.body);
     service.setServiceId(serviceId);
 
-    try {
-        const currentServiceQuery = `SELECT servicedate FROM service WHERE serviceid = ?`;
-        const currentResult: any = await db.query(currentServiceQuery, [serviceId]);
+    const currentServiceQuery = `SELECT servicedate FROM service WHERE serviceid = ?`;
+    const currentResult: any = await db.query(currentServiceQuery, [serviceId]);
 
-        if (currentResult.length === 0) {
-            return res.status(404).json({ message: 'Service not found' });
-        }
-
-        const currentDate = new Date(currentResult[0].servicedate);
-        const currentMonthYear = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
-
-        const checkCurrentClosure: any = await db.query(
-            `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`, 
-            [currentMonthYear]
-        );
-
-        if (checkCurrentClosure.length > 0) {
-            return res.status(403).json({ 
-                message: 'Cannot update service: original month is closed' 
-            });
-        }
-
-        const newServiceDate = new Date(service.getServiceDate());
-        const newMonthYear = `${newServiceDate.getFullYear()}-${(newServiceDate.getMonth() + 1).toString().padStart(2, '0')}`;
-
-        if (newMonthYear !== currentMonthYear) {
-            const checkNewClosure: any = await db.query(
-                `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`, 
-                [newMonthYear]
-            );
-
-            if (checkNewClosure.length > 0) {
-                return res.status(403).json({ 
-                    message: 'Cannot move service to a closed month' 
-                });
-            }
-        }
-
-        const updateSql = `
-            UPDATE service 
-            SET servicedate = ?, 
-                servicecategoryid = ?
-            WHERE serviceid = ?
-        `;
-
-        await db.query(updateSql, [
-            service.getServiceDate(),
-            service.getServiceCategory(),
-            serviceId
-        ]);
-
-        res.status(200).json({ message: 'SERVICE_UPDATED_SUCCESSFULLY' });
-
-    } catch (error: any) {
-        console.error('Error updating service:', error);
-        res.status(500).json({ message: 'ERROR_UPDATING_SERVICE' });
+    if (currentResult.length === 0) {
+      return ApiResponse.error(res, "Serviço não encontrado", "SERVICE_NOT_FOUND", 404);
     }
+
+    const currentDate = new Date(currentResult[0].servicedate);
+    const currentMonthYear = `${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+    const checkCurrentClosure: any = await db.query(
+      `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`,
+      [currentMonthYear]
+    );
+
+    if (checkCurrentClosure.length > 0) {
+      return ApiResponse.error(res, "Não é possível alterar serviço de um mês já fechado", "MONTH_ALREADY_CLOSED", 403);
+    }
+
+    const newServiceDate = new Date(service.getServiceDate());
+    const newMonthYear = `${newServiceDate.getFullYear()}-${(newServiceDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+    if (newMonthYear !== currentMonthYear) {
+      const checkNewClosure: any = await db.query(
+        `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`,
+        [newMonthYear]
+      );
+      if (checkNewClosure.length > 0) {
+        return ApiResponse.error(res, "Não é possível mover serviço para um mês já fechado", "MONTH_ALREADY_CLOSED", 403);
+      }
+    }
+
+    const updateSql = `
+      UPDATE service 
+      SET servicedate = ?, servicecategoryid = ?
+      WHERE serviceid = ?
+    `;
+
+    const result: any = await db.query(updateSql, [
+      service.getServiceDate(),
+      service.getServiceCategory(),
+      serviceId
+    ]);
+
+    if (result.affectedRows > 0) {
+      return ApiResponse.success(res, "Serviço atualizado com sucesso");
+    }
+
+    return ApiResponse.error(res, "Não foi possível atualizar o serviço", "DB_UPDATE_FAILED", 500);
+  } catch (err: any) {
+    console.error('Error updating service:', err);
+    return ApiResponse.error(res, "Erro interno ao atualizar serviço", "UPDATE_SERVICE_FAILED", 500);
+  }
 }
 
 async function updateServiceStatus(req: any, res: any) {
+  try {
     const serviceId = req.params.id;
     const newStatus = req.body.servicestatus;
 
     if (!serviceId) {
-        return res.status(400).json({ message: 'Missing service ID' });
+      return ApiResponse.error(res, "ID do serviço é obrigatório", "MISSING_SERVICE_ID", 400);
     }
-
     if (!newStatus || !['agendado', 'concluido', 'cancelado'].includes(newStatus)) {
-        return res.status(400).json({ 
-            message: 'Invalid status. Allowed values: agendado, concluido, cancelado' 
-        });
+      return ApiResponse.error(res, "Status inválido. Valores permitidos: agendado, concluido, cancelado", "INVALID_STATUS", 400);
     }
 
-    try {
-        const checkQuery = `
-            SELECT DATE_FORMAT(s.servicedate, '%Y-%m') as monthYear 
-            FROM service s 
-            WHERE s.serviceid = ?
-        `;
-        const result: any = await db.query(checkQuery, [serviceId]);
+    const checkQuery = `
+      SELECT DATE_FORMAT(s.servicedate, '%Y-%m') as monthYear 
+      FROM service s WHERE s.serviceid = ?
+    `;
+    const result: any = await db.query(checkQuery, [serviceId]);
 
-        if (result.length === 0) {
-            return res.status(404).json({ message: 'Service not found' });
-        }
-
-        const monthYear = result[0].monthYear;
-
-        const closureCheck: any = await db.query(
-            `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`,
-            [monthYear]
-        );
-
-        if (closureCheck.length > 0) {
-            return res.status(403).json({ 
-                message: 'Cannot update status: service belongs to a closed month' 
-            });
-        }
-
-        const updateSql = `
-            UPDATE service 
-            SET servicestatus = ? 
-            WHERE serviceid = ?
-        `;
-
-        await db.query(updateSql, [newStatus, serviceId]);
-
-        res.status(200).json({ 
-            message: 'SERVICE_STATUS_UPDATED_SUCCESSFULLY',
-            serviceId,
-            newStatus 
-        });
-
-    } catch (error: any) {
-        console.error('Error updating service status:', error);
-        res.status(500).json({ message: 'ERROR_UPDATING_SERVICE_STATUS' });
+    if (result.length === 0) {
+      return ApiResponse.error(res, "Serviço não encontrado", "SERVICE_NOT_FOUND", 404);
     }
+
+    const monthYear = result[0].monthYear;
+
+    const closureCheck: any = await db.query(
+      `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`,
+      [monthYear]
+    );
+
+    if (closureCheck.length > 0) {
+      return ApiResponse.error(res, "Não é possível alterar status de serviço em mês fechado", "MONTH_ALREADY_CLOSED", 403);
+    }
+
+    const updateSql = `UPDATE service SET servicestatus = ? WHERE serviceid = ?`;
+    const updateResult: any = await db.query(updateSql, [newStatus, serviceId]);
+
+    if (updateResult.affectedRows > 0) {
+      return ApiResponse.success(res, "Status do serviço atualizado com sucesso", { serviceId, newStatus });
+    }
+
+    return ApiResponse.error(res, "Não foi possível atualizar o status", "DB_UPDATE_FAILED", 500);
+  } catch (err: any) {
+    console.error('Error updating service status:', err);
+    return ApiResponse.error(res, "Erro interno ao atualizar status", "UPDATE_STATUS_FAILED", 500);
+  }
 }
 
 async function deleteService(req: any, res: any) {
+  try {
     const serviceId = req.params.id;
 
-    try {
-        const checkQuery = `
-            SELECT DATE_FORMAT(s.servicedate, '%Y-%m') as monthYear 
-            FROM service s 
-            WHERE s.serviceid = ?
-        `;
-        const result: any = await db.query(checkQuery, [serviceId]);
+    const checkQuery = `
+      SELECT DATE_FORMAT(s.servicedate, '%Y-%m') as monthYear 
+      FROM service s WHERE s.serviceid = ?
+    `;
+    const result: any = await db.query(checkQuery, [serviceId]);
 
-        if (result.length === 0) {
-            return res.status(404).json({ message: 'Service not found' });
-        }
-
-        const monthYear = result[0].monthYear;
-
-        const closureCheck: any = await db.query(
-            `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`, 
-            [monthYear]
-        );
-
-        if (closureCheck.length > 0) {
-            return res.status(403).json({ 
-                message: 'Cannot delete service from a closed month' 
-            });
-        }
-
-        const deleteSql = `DELETE FROM service WHERE serviceid = ?`;
-        await db.query(deleteSql, [serviceId]);
-
-        res.status(200).json({ message: 'SERVICE_DELETED_SUCCESSFULLY' });
-
-    } catch (error: any) {
-        console.error('Error deleting service:', error);
-        res.status(500).json({ message: 'ERROR_DELETING_SERVICE' });
+    if (result.length === 0) {
+      return ApiResponse.error(res, "Serviço não encontrado", "SERVICE_NOT_FOUND", 404);
     }
+
+    const monthYear = result[0].monthYear;
+
+    const closureCheck: any = await db.query(
+      `SELECT 1 FROM closure WHERE closuremonthyear = ? LIMIT 1`,
+      [monthYear]
+    );
+
+    if (closureCheck.length > 0) {
+      return ApiResponse.error(res, "Não é possível excluir serviço de um mês já fechado", "MONTH_ALREADY_CLOSED", 403);
+    }
+
+    const deleteSql = `DELETE FROM service WHERE serviceid = ?`;
+    const deleteResult: any = await db.query(deleteSql, [serviceId]);
+
+    if (deleteResult.affectedRows > 0) {
+      return ApiResponse.success(res, "Serviço removido com sucesso");
+    }
+
+    return ApiResponse.error(res, "Não foi possível remover o serviço", "DB_DELETE_FAILED", 500);
+  } catch (err: any) {
+    console.error('Error deleting service:', err);
+    return ApiResponse.error(res, "Erro interno ao remover serviço", "DELETE_SERVICE_FAILED", 500);
+  }
 }
 
 export {getService, getServices, getServicesAgenda, createService, updateService, updateServiceStatus, deleteService};
