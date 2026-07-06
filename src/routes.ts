@@ -3,6 +3,8 @@ import { getClient, createClient, updateClient, deleteClient } from './Controlle
 import { getCategory, createCategory, updateCategory, deleteCategory }from './Controller/Category';
 import { createService, deleteService, updateService, updateServiceStatus,getServicesAgenda, getServices, getService } from './Controller/Service';
 import { getClosures, getClosureDetails, getClosureOverview, createClosure } from './Controller/Closure';
+import { register, login } from './Controller/Auth';
+import { authenticateToken } from './Middleware/auth';
 import { error } from 'console';
 
 const router = Router();
@@ -10,7 +12,7 @@ const router = Router();
 
 //      --------    CLIENT
 
-router.get('/client', async function(req: any, res: any){
+router.get('/client', authenticateToken, async function(req: any, res: any){
     try{
         await getClient(req, res);
     } catch(err: any){
@@ -18,7 +20,7 @@ router.get('/client', async function(req: any, res: any){
     }
 })
 
-router.post('/client', async function(req: any, res: any){
+router.post('/client', authenticateToken, async function(req: any, res: any){
     try{
         await createClient(req, res);
     } catch(err: any){
@@ -26,7 +28,7 @@ router.post('/client', async function(req: any, res: any){
     }
 })
 
-router.put('/client/:id', async function (req: any, res: any) {
+router.put('/client/:id', authenticateToken, async function (req: any, res: any) {
     try{
         await updateClient(req, res);
     } catch(err: any){
@@ -34,7 +36,7 @@ router.put('/client/:id', async function (req: any, res: any) {
     }
 })
 
-router.delete('/client/:id', async function (req: any, res: any) {
+router.delete('/client/:id', authenticateToken, async function (req: any, res: any) {
     try{
         await deleteClient(req, res);
     } catch(err: any){
@@ -44,7 +46,7 @@ router.delete('/client/:id', async function (req: any, res: any) {
 
 //      --------    CATEGORY
 
-router.get('/category', async function (req: any, res: any) {
+router.get('/category', authenticateToken, async function (req: any, res: any) {
     try{
         await getCategory(req, res);
     } catch(err: any){
@@ -52,7 +54,7 @@ router.get('/category', async function (req: any, res: any) {
     }
 })
 
-router.post('/category', async function (req: any, res: any) {
+router.post('/category', authenticateToken, async function (req: any, res: any) {
     try{
         await createCategory(req, res);
     } catch(err: any){
@@ -60,7 +62,7 @@ router.post('/category', async function (req: any, res: any) {
     }
 })
 
-router.put('/category/:id', async function (req: any, res: any) {
+router.put('/category/:id', authenticateToken, async function (req: any, res: any) {
     try{
         await updateCategory(req, res);
     } catch(err: any){
@@ -68,7 +70,7 @@ router.put('/category/:id', async function (req: any, res: any) {
     }
 })
 
-router.delete('/category/:id', async function (req: any, res: any) {
+router.delete('/category/:id', authenticateToken, async function (req: any, res: any) {
     try{
         await deleteCategory(req, res);
     } catch(err: any){
@@ -78,7 +80,7 @@ router.delete('/category/:id', async function (req: any, res: any) {
 
 //      --------    SERVICE
 
-router.get('/service-agenda/:id', async function (req: any, res: any){
+router.get('/service-agenda/:id', authenticateToken, async function (req: any, res: any){
 
     try{
         await getService(req, res);
@@ -87,7 +89,7 @@ router.get('/service-agenda/:id', async function (req: any, res: any){
     }
 })
 
-router.get('/service-agenda', async function (req: any, res: any){
+router.get('/service-agenda', authenticateToken, async function (req: any, res: any){
     try{
         await getServices(req, res);
     } catch(err: any){
@@ -95,7 +97,7 @@ router.get('/service-agenda', async function (req: any, res: any){
     }
 })
 
-router.post('/service-agenda', async function (req: any, res: any){
+router.post('/service-agenda', authenticateToken, async function (req: any, res: any){
     try{
         await getServicesAgenda(req, res);
     } catch(err: any){
@@ -103,7 +105,7 @@ router.post('/service-agenda', async function (req: any, res: any){
     }
 })
 
-router.post('/service', async function (req: any, res: any){
+router.post('/service', authenticateToken, async function (req: any, res: any){
     try{
         await createService(req, res);
     } catch(err: any){
@@ -111,7 +113,7 @@ router.post('/service', async function (req: any, res: any){
     }
 })
 
-router.put('/service/:id', async function (req: any, res: any){
+router.put('/service/:id', authenticateToken, async function (req: any, res: any){
     try{
         await updateService(req, res);
     }catch(err: any){{
@@ -119,7 +121,7 @@ router.put('/service/:id', async function (req: any, res: any){
     }}
 })
 
-router.put('/service-status/:id', async function (req: any, res: any){
+router.put('/service-status/:id', authenticateToken, async function (req: any, res: any){
     try{
         await updateServiceStatus(req, res);
     }catch(err: any){{
@@ -127,7 +129,7 @@ router.put('/service-status/:id', async function (req: any, res: any){
     }}
 })
 
-router.delete('/service/:id', async function (req: any, res: any){
+router.delete('/service/:id', authenticateToken, async function (req: any, res: any){
     try{
         await deleteService(req, res);
     }catch(err: any){{
@@ -137,37 +139,55 @@ router.delete('/service/:id', async function (req: any, res: any){
 
 //      --------    Closure
 
-router.get('/closure', async function (req: any, res: any){
+router.get('/closure', authenticateToken, async function (req: any, res: any){
     try{
-        res.json(await getClosures(req, res));
+        await getClosures(req, res);
     } catch(err: any){
         console.error('Error to get closures list: ', err.message);
     }
 })
 
-router.get('/closure-details/:id', async function (req: any, res: any){
+router.get('/closure-details/:id', authenticateToken, async function (req: any, res: any){
     try{
-        res.json(await getClosureDetails(req, res));
+        await getClosureDetails(req, res);
     } catch(err: any){
         console.error('Error to get closures list: ', err.message);
     }
 })
 
-router.get('/closure-overview/:id', async function (req: any, res: any){
+router.get('/closure-overview/:id', authenticateToken, async function (req: any, res: any){
     try{
-        res.json(await getClosureOverview(req, res));
+        await getClosureOverview(req, res);
     } catch(err: any){
         console.error('Error to get closures list: ', err.message);
     }
 })
 
-router.post('/closure', async function (req: any, res: any){
+router.post('/closure', authenticateToken, async function (req: any, res: any){
     try{
-        res.json(await createClosure(req, res));
+        await createClosure(req, res);
     } catch(err: any){
         console.error('Error to create closure: ', err.message);
     }
 })
 
+
+//      --------    Auth
+
+router.post('/register', async (req: any, res: any) => {
+    try {
+        await register(req, res);
+    } catch (err: any) {
+        console.error('Error in register route:', err.message);
+    }
+});
+
+router.post('/login', async (req: any, res: any) => {
+    try {
+        await login(req, res);
+    } catch (err: any) {
+        console.error('Error in login route:', err.message);
+    }
+});
 
 export default router;
