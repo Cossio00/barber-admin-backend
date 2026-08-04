@@ -1,12 +1,16 @@
-import { createConnection } from 'mysql2/promise';
-import config from './configDB';
+import { createPool } from "mysql2/promise";
+import config from "./configDB";
 
-async function query(sql: any, params: any){
-    
-    const connection = await createConnection(config.db);
-    const [results, ] = await connection.execute(sql, params);
+const pool = createPool({
+  ...config.db,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
 
-    return results;
+async function query(sql: string, params: any[] = []) {
+  const [results] = await pool.execute(sql, params);
+  return results;
 }
 
-export default {query};
+export default { query };
