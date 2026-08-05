@@ -3,6 +3,10 @@ import config from "./configDB";
 
 const pool = createPool({
   ...config.db,
+  ssl: {
+    minVersion: "TLSv1.2",
+    rejectUnauthorized: true,
+  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
