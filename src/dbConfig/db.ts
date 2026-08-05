@@ -10,6 +10,7 @@ const pool = createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  dateStrings: true,
 });
 
 async function query(sql: string, params: any[] = []) {
