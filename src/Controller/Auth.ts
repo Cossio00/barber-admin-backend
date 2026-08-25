@@ -13,6 +13,18 @@ if (!JWT_SECRET) {
   process.exit(1);
 }
 
+function generateSlug(name: string, id: string): string {
+  const normalizedName = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `${normalizedName}-${id.slice(0, 6)}`;
+}
+
 const SECRET: string = JWT_SECRET;
 
 async function register(req: any, res: any) {
@@ -34,11 +46,13 @@ async function register(req: any, res: any) {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
+    const barbershopSlug = generateSlug(barbershopname, barbershopId);
+    
     const barbershopSql = `
-      INSERT INTO barbershop (barbershopid, barbershopname)
-      VALUES (?, ?)
+      INSERT INTO barbershop (barbershopid, barbershopname, barbershopslug)
+      VALUES (?, ?, ?)
     `;
-    await db.query(barbershopSql, [barbershopId, barbershopname]);
+    await db.query(barbershopSql, [barbershopId, barbershopname, barbershopSlug]);
 
     const user = new User({
       userid: userId,
